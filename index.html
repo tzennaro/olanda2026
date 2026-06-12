@@ -553,6 +553,636 @@
                 currentDayLayerGroup.addTo(map);
                 
                 // Fit bounds dinamico
+                var groupBounds = L.featureGroup(activeDayMarkers).getBounds();
+                if (coords.length === 1) {
+                    map.setView(coords[0], 14);
+                } else if (groupBounds.getNorthEast().distanceTo(groupBounds.getSouthWest()) < 3000) { // Se l'area è piccola, imposta uno zoom minimo
+                    map.fitBounds(groupBounds, { padding: [50, 50], maxZoom: 15 });
+                }
+                else {
+                    map.fitBounds(groupBounds, { padding: [50, 50] });
+                }
+            }
+        }
+
+        // Inizializza
+        createOverview();
+        showOverview();
+
+        // 5. Interazione Click sulle Card
+        document.querySelectorAll('.day-card').forEach(function(card) {
+            card.addEventListener('click', function() {
+                var clickedDay = parseInt(card.getAttribute('data-day'));
+                
+                // Se clicco la card già attiva -> Deseleziona
+                if(activeDay === clickedDay) {
+                    activeDay = null;
+                    document.querySelectorAll('.day-card').forEach(c => c.classList.remove('selected'));
+                    showOverview();
+                } 
+                // Se clicco una nuova card -> Seleziona Giorno
+                else {
+                    activeDay = clickedDay;
+                    document.querySelectorAll('.day-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    showDay(clickedDay);
+                }
+            });
+
+            // Gestione Hover
+            card.addEventListener('mouseenter', function() {
+                if (activeDay === null) {
+                    var hoverDay = card.getAttribute('data-day');
+                    overviewMarkers.forEach(function(m) {
+                        var pinDiv = m.getElement().querySelector('.pin-inner');
+                        if (pinDiv && pinDiv.innerHTML.includes(hoverDay)) {
+                            pinDiv.classList.add('active');
+                            m.setZIndexOffset(1000);
+                        }
+                    });
+                } else if (activeDay === parseInt(card.getAttribute('data-day'))) {
+                    activeDayMarkers.forEach(m => {
+                        var pinDiv = m.getElement().querySelector('.pin-detail');
+                        if(pinDiv) pinDiv.classList.add('active');
+                    });
+                }
+            });
+
+            card.addEventListener('mouseleave', function() {
+                if (activeDay === null) {
+                    overviewMarkers.forEach(function(m) {
+                        var pinDiv = m.getElement().querySelector('.pin-inner');
+                        if(pinDiv) pinDiv.classList.remove('active');
+                        m.setZIndexOffset(0);
+                    });
+                } else {
+                    activeDayMarkers.forEach(m => {
+                        var pinDiv = m.getElement().querySelector('.pin-detail');
+                        if(pinDiv) pinDiv.classList.remove('active');
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olanda on the Road 🚲 | 20-28 Giugno</title>
+    
+<!-- Favicon con Emoji Pallino Arancione incorporata -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🟠</text></svg>">
+
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<style>
+    /* Stili Base per Dashboard */
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; background-color: #f4f7f6; color: #2c3e50; }
+    
+    header { background: linear-gradient(135deg, #ff7b00 0%, #e65100 100%); color: white; padding: 1rem 1.5rem; flex: 0 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 20; }
+    header h1 { margin: 0; font-size: 1.8rem; }
+    
+    .container { flex: 1; display: flex; flex-direction: column; max-width: 100%; padding: 1.5rem; overflow: hidden; box-sizing: border-box; }
+    
+    /* Layout Split */
+    .split-layout { display: flex; gap: 2rem; width: 100%; height: 100%; overflow: hidden; }
+    
+    /* Mappa Fissa */
+    .map-wrapper { flex: 0 0 55%; height: 100%; }
+    #map { height: 100%; width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 3px solid #fff; box-sizing: border-box; background: #e5e3df; }
+
+    /* Area Contenuti Destra */
+    .content-wrapper { flex: 0 0 calc(45% - 2rem); display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+    /* Tabs Sticky */
+    .tabs { flex: 0 0 auto; display: flex; gap: 10px; margin-bottom: 1rem; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+    .tab-btn { background: #e0e0e0; border: none; padding: 10px 20px; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold; font-size: 1rem; color: #555; transition: background 0.3s; }
+    .tab-btn.active { background: #ff7b00; color: white; }
+    .tab-btn:hover:not(.active) { background: #d0d0d0; }
+    
+    /* Contenuti Scorritori delle Tab */
+    .tab-content { display: none; height: 100%; overflow-y: auto; padding-right: 8px; box-sizing: border-box; scroll-behavior: smooth; }
+    .tab-content.active { display: block; }
+    
+    .tab-content::-webkit-scrollbar { width: 6px; }
+    .tab-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    .tab-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+    .tab-content::-webkit-scrollbar-thumb:hover { background: #999; }
+
+    /* Stile Pin Mappa Overview (Rotondi) */
+    .custom-div-icon { background: transparent; border: none; }
+    .pin-inner {
+        background: #e65100; border: 2px solid #ffffff; color: #ffffff; font-weight: bold;
+        text-align: center; border-radius: 50%; line-height: 26px; font-size: 0.9rem;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3); width: 30px; height: 30px;
+        transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
+    }
+    .pin-inner.active { transform: scale(1.6); background: #004b87; border-color: #ff7b00; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 1000; }
+
+    /* Stile Pin Mappa Dettaglio Giorno (A Pillola con Lettera + Icona) */
+    .pin-detail {
+        background: #004b87; border: 2px solid #ffffff; color: #ffffff;
+        border-radius: 17px; height: 34px; width: 56px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        display: flex; align-items: center; justify-content: center; gap: 4px;
+        transition: transform 0.2s;
+    }
+    .pin-detail.active { transform: scale(1.3); background: #ff7b00; z-index: 1000; }
+    .pin-letter { font-weight: bold; font-size: 1rem; }
+    .pin-icon { font-size: 1.1rem; }
+
+    /* Stile Popup */
+    .custom-popup { width: 220px; }
+    .custom-popup img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
+    .custom-popup h4 { margin: 0 0 5px 0; color: #004b87; font-size: 1.1rem; }
+    .custom-popup p { margin: 0 0 10px 0; font-size: 0.9rem; color: #555; }
+    .popup-links { border-top: 1px solid #eee; padding-top: 8px; font-size: 0.85rem; }
+    .popup-links a { color: #e65100; text-decoration: none; display: block; margin-bottom: 3px; font-weight: bold; }
+    .popup-links a:hover { text-decoration: underline; }
+
+    /* Card Itinerario */
+    .card-box { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; cursor: pointer; border: 2px solid transparent; }
+    .card-box:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+    .card-box h3 { margin-top: 0; color: #004b87; border-bottom: 1px solid #eee; padding-bottom: 0.8rem; pointer-events: none; }
+    
+    .day-card { border-left: 6px solid #ff7b00; }
+    .day-card.selected { border-color: #004b87; background-color: #f4fafe; transform: translateX(5px); }
+    
+    .food-card { border-left: 6px solid #2e7d32; cursor: default; border-right: 2px solid transparent; border-top: 2px solid transparent; border-bottom: 2px solid transparent;}
+    .street-card { border-left: 6px solid #c62828; cursor: default; border-right: 2px solid transparent; border-top: 2px solid transparent; border-bottom: 2px solid transparent;}
+    
+    .day-card ul.timeline { padding-left: 1.2rem; margin-bottom: 1.5rem; list-style-type: square; pointer-events: none; }
+    .day-card li { margin-bottom: 0.8rem; }
+    .time-badge { font-weight: 700; color: #e65100; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+
+    /* Badge Pernottamento */
+    .sleep-badge { display: inline-block; background-color: #004b87; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 1rem; text-transform: uppercase; pointer-events: none; }
+
+    /* Link & Sezione Ristoranti */
+    .gmaps-link { color: #004b87; text-decoration: none; font-weight: bold; border-bottom: 1px solid #b3d4ff; transition: color 0.2s, border-color 0.2s; pointer-events: auto; }
+    .gmaps-link:hover { color: #ff7b00; border-color: #ff7b00; }
+
+    .meal-section { background: rgba(255,255,255,0.7); border-radius: 8px; padding: 1rem; margin-top: 1rem; font-size: 0.9rem; border: 1px solid #eaeaea; pointer-events: none; }
+    .meal-section h4 { margin: 0 0 0.5rem 0; color: #2e7d32; font-size: 1rem; }
+    .meal-item { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed #ddd; pointer-events: auto; }
+    .meal-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .meal-type { font-size: 0.75rem; background: #e0e0e0; padding: 2px 6px; border-radius: 4px; margin-left: 5px; text-transform: uppercase; font-weight: bold; color: #333; }
+
+    /* Tag Consigli Culinari */
+    .tag-container { margin-bottom: 1rem; }
+    .tag { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-right: 0.5rem; margin-bottom: 0.5rem; text-transform: uppercase; }
+    .tag.etnico { background: #ffe0b2; color: #e65100; }
+    .tag.pesce { background: #e3f2fd; color: #1565c0; }
+    .tag.veg { background: #e8f5e9; color: #2e7d32; }
+    .tag.dolce { background: #fce4ec; color: #c2185b; }
+    .review-box { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-top: 1rem; font-size: 0.95rem; }
+    .pro { color: #2e7d32; font-weight: bold; display: block; margin-bottom: 0.3rem; }
+    .contro { color: #c62828; font-weight: bold; display: block; }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        html, body { overflow: auto; height: auto; }
+        body { display: block; }
+        header { padding: 1rem; }
+        .container { height: auto; overflow: visible; padding: 1rem; }
+        .split-layout { flex-direction: column; height: auto; gap: 1rem; }
+        .map-wrapper { width: 100%; height: 45vh; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #ff7b00; }
+        #map { border-radius: 0 0 12px 12px; }
+        .content-wrapper { width: 100%; height: auto; overflow: visible; }
+        .tab-content { height: auto; overflow-y: visible; padding-right: 0; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>🌷 Paesi Bassi in Treno & Bici 🚲</h1>
+</header>
+
+<div class="container">
+    <div class="split-layout">
+        
+        <!-- MAPPA FISSA -->
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+
+        <!-- CONTENUTO -->
+        <div class="content-wrapper">
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab('tab-itinerario', this)">Itinerario</button>
+                <button class="tab-btn" onclick="openTab('tab-cibo', this)">Consigli Culinari</button>
+            </div>
+
+            <!-- TAB 1: ITINERARIO -->
+            <div id="tab-itinerario" class="tab-content active">
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;"><em>ℹ️ Clicca su un giorno per vedere l'ordine cronologico delle tappe sulla mappa (A, B, C...). Clicca di nuovo per tornare alla visuale generale.</em></p>
+                
+                <div class="card-box day-card" data-day="1">
+                    <h3>Giorno 1 (20 Giugno) - Arrivo & Jordaan 📍 Amsterdam</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Amsterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Arrivo:</span> Volo per Schiphol. Treno per Amsterdam Centraal.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> Check-in. Passeggiata nelle <a href="https://www.google.com/maps/search/?api=1&query=De+Negen+Straatjes+Amsterdam" target="_blank" class="gmaps-link">Nove Strade</a>.</li>
+                        <li><span class="time-badge">Sera:</span> Esplorazione del <a href="https://www.google.com/maps/search/?api=1&query=Jordaan+Amsterdam" target="_blank" class="gmaps-link">quartiere Jordaan</a>.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Cena</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Waterkant+Amsterdam" target="_blank" class="gmaps-link">Waterkant</a> <span class="meal-type">Etnico</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Moeders+Amsterdam" target="_blank" class="gmaps-link">Moeders</a> <span class="meal-type">Locale Sincero</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="2">
+                    <h3>Giorno 2 (21 Giugno) - I Classici dell'Arte 📍 Amsterdam</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Amsterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Bici verso Museumplein. Visita al <a href="https://www.google.com/maps/search/?api=1&query=Rijksmuseum+Amsterdam" target="_blank" class="gmaps-link">Rijksmuseum</a>.</li>
+                        <li><span class="time-badge">Pranzo:</span> <a href="https://www.google.com/maps/search/?api=1&query=Albert+Cuypmarkt+Amsterdam" target="_blank" class="gmaps-link">Albert Cuypmarkt</a>.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> <a href="https://www.google.com/maps/search/?api=1&query=Vondelpark+Amsterdam" target="_blank" class="gmaps-link">Vondelpark</a> in bicicletta.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Albert+Cuypmarkt+Amsterdam" target="_blank" class="gmaps-link">Albert Cuypmarkt</a> <span class="meal-type">Street Food</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=The+Seafood+Bar+Amsterdam" target="_blank" class="gmaps-link">The Seafood Bar</a> <span class="meal-type">Posto Curato</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="3">
+                    <h3>Giorno 3 (22 Giugno) - Van Gogh & NDSM 📍 Amsterdam</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Amsterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Visita al <a href="https://www.google.com/maps/search/?api=1&query=Van+Gogh+Museum+Amsterdam" target="_blank" class="gmaps-link">Van Gogh Museum</a>.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> Traghetto per <a href="https://www.google.com/maps/search/?api=1&query=NDSM-werf+Amsterdam" target="_blank" class="gmaps-link">NDSM-werf</a> (street art).</li>
+                        <li><span class="time-badge">Sera:</span> Crociera sui canali.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Pllek+Amsterdam" target="_blank" class="gmaps-link">Pllek (NDSM)</a> <span class="meal-type">Alternativo</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Foodhallen+Amsterdam" target="_blank" class="gmaps-link">Foodhallen</a> <span class="meal-type">Street Food</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="4">
+                    <h3>Giorno 4 (23 Giugno) - Il Fascino di Utrecht 📍 Utrecht</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Amsterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Treno per Utrecht. Passeggiata sull'<a href="https://www.google.com/maps/search/?api=1&query=Oudegracht+Utrecht" target="_blank" class="gmaps-link">Oudegracht</a>.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> <a href="https://www.google.com/maps/search/?api=1&query=Torre+del+Dom+Utrecht" target="_blank" class="gmaps-link">Torre del Dom</a> e chiostro Pandhof.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Sea+Salt+Saloon+Utrecht" target="_blank" class="gmaps-link">Sea Salt Saloon</a> <span class="meal-type">Informale</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Kimmade+Utrecht" target="_blank" class="gmaps-link">Kimmade</a> <span class="meal-type">Etnico</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="5">
+                    <h3>Giorno 5 (24 Giugno) - Benvenuti nel Futuro 📍 Rotterdam</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Rotterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Treno per Rotterdam. Check-in in hotel.</li>
+                        <li><span class="time-badge">Pranzo:</span> Esplorazione in zona <a href="https://www.google.com/maps/search/?api=1&query=Markthal+Rotterdam" target="_blank" class="gmaps-link">Markthal</a>.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> <a href="https://www.google.com/maps/search/?api=1&query=Kijk-Kubus+Rotterdam" target="_blank" class="gmaps-link">Case Cubiche (Kijk-Kubus)</a> e <a href="https://www.google.com/maps/search/?api=1&query=Oude+Haven+Rotterdam" target="_blank" class="gmaps-link">Oude Haven</a>.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Markthal+Rotterdam" target="_blank" class="gmaps-link">Markthal</a> <span class="meal-type">Street Food</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Bazar+Rotterdam" target="_blank" class="gmaps-link">Bazar</a> <span class="meal-type">Etnico</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="6">
+                    <h3>Giorno 6 (25 Giugno) - I Mulini a Vento 📍 Kinderdijk</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Rotterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Waterbus per <a href="https://www.google.com/maps/search/?api=1&query=Kinderdijk" target="_blank" class="gmaps-link">Kinderdijk</a> (mulini storici).</li>
+                        <li><span class="time-badge">Pomeriggio:</span> Rientro e visita a <a href="https://www.google.com/maps/search/?api=1&query=Delfshaven+Rotterdam" target="_blank" class="gmaps-link">Delfshaven</a>.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Stadsbrouwerij+De+Pelgrim+Rotterdam" target="_blank" class="gmaps-link">Stadsbrouwerij De Pelgrim</a> <span class="meal-type">Pub Storico</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Fenix+Food+Factory+Rotterdam" target="_blank" class="gmaps-link">Fenix Food Factory</a> <span class="meal-type">Street Food</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="7">
+                    <h3>Giorno 7 (26 Giugno) - Arte e Spiaggia 📍 L'Aia & Scheveningen</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Rotterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Treno per L'Aia. <a href="https://www.google.com/maps/search/?api=1&query=Mauritshuis+L'Aia" target="_blank" class="gmaps-link">Mauritshuis</a> e <a href="https://www.google.com/maps/search/?api=1&query=Binnenhof+L'Aia" target="_blank" class="gmaps-link">Binnenhof</a>.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> Tram per la <a href="https://www.google.com/maps/search/?api=1&query=Scheveningen+Beach" target="_blank" class="gmaps-link">spiaggia di Scheveningen</a>.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Simonis+aan+Zee+L'Aia" target="_blank" class="gmaps-link">Simonis aan Zee</a> <span class="meal-type">Street Food Mare</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Suzie+Q+Scheveningen" target="_blank" class="gmaps-link">Suzie Q</a> <span class="meal-type">Posto Curato</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="8">
+                    <h3>Giorno 8 (27 Giugno) - La Romantica Delft 📍 Delft</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Rotterdam</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Treno per <a href="https://www.google.com/maps/search/?api=1&query=Delft+Centrum" target="_blank" class="gmaps-link">Delft</a>. Canali, piazze e ceramiche.</li>
+                        <li><span class="time-badge">Pomeriggio:</span> Rientro a Rotterdam. <a href="https://www.google.com/maps/search/?api=1&query=Euromast+Rotterdam" target="_blank" class="gmaps-link">Torre Euromast</a>.</li>
+                    </ul>
+                    <div class="meal-section">
+                        <h4>🍴 Suggerimenti Pasti</h4>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Visbanken+Delft" target="_blank" class="gmaps-link">Visbanken (Delft)</a> <span class="meal-type">Street Food</span></div>
+                        <div class="meal-item"><a href="https://www.google.com/maps/search/?api=1&query=Ayla+Rotterdam" target="_blank" class="gmaps-link">Ayla (Rotterdam)</a> <span class="meal-type">Posto Curato</span></div>
+                    </div>
+                </div>
+
+                <div class="card-box day-card" data-day="9">
+                    <h3>Giorno 9 (28 Giugno) - Rientro a Casa ✈️</h3>
+                    <div class="sleep-badge">🏨 Pernottamento: Milano</div>
+                    <ul class="timeline">
+                        <li><span class="time-badge">Mattina:</span> Treno Intercity Direct per Schiphol. Volo di rientro.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- TAB 2: CONSIGLI CULINARI DETTAGLIATI -->
+            <div id="tab-cibo" class="tab-content">
+                
+                <h3 style="color:#004b87; margin-bottom: 1rem;">🐟 Street Food & Piatti Tipici</h3>
+                
+                <div class="card-box street-card">
+                    <h3 style="pointer-events: auto;">Kibbeling</h3>
+                    <div class="tag-container"><span class="tag pesce">Pesce</span> <span class="tag">Street Food</span></div>
+                    <p>Bocconcini di pesce bianco pastellati e fritti, serviti caldissimi con salsa all'aglio o tartara.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Croccante e saporito. Piace a tutti.</span>
+                        <span class="contro">👎 Contro: Va mangiato subito, altrimenti diventa gommoso e pesante.</span>
+                    </div>
+                </div>
+
+                <div class="card-box street-card">
+                    <h3 style="pointer-events: auto;">Haring (Aringa cruda)</h3>
+                    <div class="tag-container"><span class="tag pesce">Pesce crudo</span> <span class="tag">Tradizione</span></div>
+                    <p>Aringa in salamoia con cipolla e cetriolini. Consigliata nel panino (Broodje Haring) se è la prima volta.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: L'esperienza locale definitiva. Consistenza burrosa e scioglievole.</span>
+                        <span class="contro">👎 Contro: Sapore intenso e persistente. La cipolla cruda si farà sentire a lungo.</span>
+                    </div>
+                </div>
+
+                <div class="card-box street-card">
+                    <h3 style="pointer-events: auto;">Garnalenkroket & Bitterballen Veg</h3>
+                    <div class="tag-container"><span class="tag pesce">Pesce</span> <span class="tag veg">Veg</span></div>
+                    <p>Crocchette da pub. Provate quelle ai gamberetti grigi del Mare del Nord o le classiche vegetariane ai funghi/formaggio.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Lo snack perfetto da abbinare a una birra locale.</span>
+                        <span class="contro">👎 Contro: L'interno è magma vulcanico! Aspettare qualche minuto prima di mordere.</span>
+                    </div>
+                </div>
+
+                <div class="card-box street-card">
+                    <h3 style="pointer-events: auto;">Oude Kaas (Gouda Stagionato)</h3>
+                    <div class="tag-container"><span class="tag veg">Formaggio</span> <span class="tag">Mercato</span></div>
+                    <p>Formaggio stagionato friabile, spesso con cristalli di sale croccanti all'interno.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Ottimo sapore umami, perfetto accompagnato con la senape locale.</span>
+                        <span class="contro">👎 Contro: Evitare i negozi per turisti in centro con i formaggi colorati, sono costosi e meno autentici.</span>
+                    </div>
+                </div>
+
+                <div class="card-box street-card">
+                    <h3 style="pointer-events: auto;">Stroopwafels & Poffertjes</h3>
+                    <div class="tag-container"><span class="tag dolce">Dolce</span></div>
+                    <p>Cialde sottili ripiene di caramello (Stroopwafel) o mini-pancake caldi al burro e zucchero a velo (Poffertjes).</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Confortanti, dolcissimi e perfetti per una pausa pomeridiana.</span>
+                        <span class="contro">👎 Contro: Gli Stroopwafels confezionati non sono paragonabili a quelli fatti caldi al momento nei mercati.</span>
+                    </div>
+                </div>
+
+                <h3 style="color:#004b87; margin-top: 2rem; margin-bottom: 1rem;">🥢 Ristoranti Etnici Dettagliati</h3>
+
+                <div class="card-box food-card">
+                    <h3 style="pointer-events: auto;">Waterkant 📍 Amsterdam</h3>
+                    <div class="tag-container"><span class="tag etnico">Surinamese</span> <span class="tag veg">Veg/Pesce</span></div>
+                    <p>Situato sotto un parcheggio a spirale affacciato sul canale. Offre cucina del Suriname (ex colonia olandese).</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Roti Roll fantastico, location suggestiva e ottime birre.</span>
+                        <span class="contro">👎 Contro: Spesso molto affollato, rumoroso, e il servizio ai tavoli esterni può essere distratto.</span>
+                    </div>
+                </div>
+
+                <div class="card-box food-card">
+                    <h3 style="pointer-events: auto;">Bazar 📍 Rotterdam</h3>
+                    <div class="tag-container"><span class="tag etnico">Medio Orientale</span> <span class="tag veg">Veg/Pesce</span></div>
+                    <p>Istituzione coloratissima in Witte de Withstraat. Un'esplosione di lampade e tavoli decorati.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Porzioni esagerate, prezzi onesti e pane arabo caldo sfornato in continuazione.</span>
+                        <span class="contro">👎 Contro: I tavoli sono molto vicini tra loro, manca totalmente la privacy.</span>
+                    </div>
+                </div>
+
+                <div class="card-box food-card">
+                    <h3 style="pointer-events: auto;">Kantjil & De Tijger 📍 Amsterdam</h3>
+                    <div class="tag-container"><span class="tag etnico">Indonesiano</span> <span class="tag veg">Veg/Pesce</span></div>
+                    <p>Locale spazioso in centro, perfetto per provare il tradizionale Rijsttafel (Tavolo di Riso condiviso).</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Posizione comoda, facile chiedere un menù degustazione esclusivamente pescetariano.</span>
+                        <span class="contro">👎 Contro: Molto turistico e "industriale", manca del calore delle piccole trattorie familiari.</span>
+                    </div>
+                </div>
+
+                <div class="card-box food-card">
+                    <h3 style="pointer-events: auto;">Foodhallen (AMS) / Fenix (RTM)</h3>
+                    <div class="tag-container"><span class="tag etnico">Street Food</span> <span class="tag veg">Veg/Pesce</span></div>
+                    <p>Ex depositi industriali riqualificati e trasformati in mercati coperti con decine di stand internazionali.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Varietà immensa. Perfetto per prendere piatti diversi (tacos di pesce, bao veg) e mangiare assieme.</span>
+                        <span class="contro">👎 Contro: Nelle ore di punta (soprattutto a Foodhallen) trovare un posto a sedere è faticoso.</span>
+                    </div>
+                </div>
+
+                <div class="card-box food-card">
+                    <h3 style="pointer-events: auto;">Simonis aan Zee 📍 L'Aia (Scheveningen)</h3>
+                    <div class="tag-container"><span class="tag pesce">Pesce Locale</span></div>
+                    <p>Gigantesco locale/self-service direttamente sul porto turistico di Scheveningen.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Pesce e Kibbeling freschissimi, porzioni giganti. Il tempio dello street food di mare locale.</span>
+                        <span class="contro">👎 Contro: Atmosfera caotica e spartana da mensa. Attenzione ai gabbiani se si mangia nei tavoli all'aperto.</span>
+                    </div>
+                </div>
+                
+                <div class="card-box food-card">
+                    <h3 style="pointer-events: auto;">Little V 📍 Rotterdam (e L'Aia)</h3>
+                    <div class="tag-container"><span class="tag etnico">Vietnamita</span> <span class="tag veg">Veg/Pesce</span></div>
+                    <p>Ristorante curatissimo che riproduce l'estetica di un elegante e rigoglioso giardino del sud-est asiatico.</p>
+                    <div class="review-box">
+                        <span class="pro">👍 Pro: Ottimi cocktail freschi, involtini estivi perfetti e zuppa Pho di mare eccellente. Ottimo per cene romantiche.</span>
+                        <span class="contro">👎 Contro: Fascia di prezzo medio-alta e necessità quasi assoluta di prenotare con anticipo.</span>
+                    </div>
+                </div>
+
+            </div> <!-- Fine tab-cibo -->
+
+        </div> <!-- Fine content-wrapper -->
+    </div> <!-- Fine split-layout -->
+</div>
+
+<script>
+    // Gestione Tab
+    function openTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // 1. Inizializzazione Mappa
+        var map = L.map('map').setView([52.1, 4.8], 9);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        // 2. Dati Overview (Visione d'insieme)
+        var overviewData = [
+            { lat: 52.3105, lng: 4.7683, num: "1", titolo: "Aeroporto Schiphol", img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=300&q=80" },
+            { lat: 52.3731, lng: 4.8922, num: "1-4", titolo: "Amsterdam", img: "https://images.unsplash.com/photo-1517736996303-4e64a4f88f66?auto=format&fit=crop&w=300&q=80" },
+            { lat: 52.0907, lng: 5.1214, num: "4", titolo: "Utrecht", img: "https://images.unsplash.com/photo-1565017260533-31f0e4a77085?auto=format&fit=crop&w=300&q=80" },
+            { lat: 51.9225, lng: 4.4791, num: "5-8", titolo: "Rotterdam", img: "https://images.unsplash.com/photo-1572520626388-75c1dd86dcfe?auto=format&fit=crop&w=300&q=80" },
+            { lat: 51.8833, lng: 4.6333, num: "6", titolo: "Kinderdijk", img: "https://images.unsplash.com/photo-1601625463683-1ce8ba9b1b16?auto=format&fit=crop&w=300&q=80" },
+            { lat: 52.0705, lng: 4.3007, num: "7", titolo: "L'Aia", img: "https://images.unsplash.com/photo-1624606277977-12df595da182?auto=format&fit=crop&w=300&q=80" },
+            { lat: 52.1153, lng: 4.2783, num: "7", titolo: "Scheveningen", img: "https://images.unsplash.com/photo-1596417743510-18dc0e6e76cf?auto=format&fit=crop&w=300&q=80" },
+            { lat: 52.0116, lng: 4.3592, num: "8", titolo: "Delft", img: "https://images.unsplash.com/photo-1563200720-c2d7ed153cb1?auto=format&fit=crop&w=300&q=80" }
+        ];
+
+        var overviewPolylineCoords = [
+            [52.3105, 4.7683], [52.3731, 4.8922], [52.0907, 5.1214], [52.3731, 4.8922],
+            [51.9225, 4.4791], [51.8833, 4.6333], [51.9225, 4.4791], [52.0705, 4.3007],
+            [52.1153, 4.2783], [51.9225, 4.4791], [52.0116, 4.3592], [51.9225, 4.4791], [52.3105, 4.7683]
+        ];
+
+        // 3. Dati Dettagliati per singolo giorno
+        var dayData = {
+            1: [
+                { lat: 52.3105, lng: 4.7683, icon: "✈️", title: "Schiphol" },
+                { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Amsterdam Centraal" },
+                { lat: 52.3702, lng: 4.8860, icon: "🛍️", title: "Nove Strade" },
+                { lat: 52.3768, lng: 4.8800, icon: "📸", title: "Quartiere Jordaan" }
+            ],
+            2: [
+                { lat: 52.3600, lng: 4.8852, icon: "🏛️", title: "Rijksmuseum" },
+                { lat: 52.3560, lng: 4.8930, icon: "🍴", title: "Albert Cuypmarkt" },
+                { lat: 52.3580, lng: 4.8686, icon: "🌳", title: "Vondelpark" }
+            ],
+            3: [
+                { lat: 52.3584, lng: 4.8811, icon: "🎨", title: "Van Gogh Museum" },
+                { lat: 52.4000, lng: 4.8933, icon: "🏭", title: "NDSM-werf" },
+                { lat: 52.3730, lng: 4.8920, icon: "⛵", title: "Crociera Canali" }
+            ],
+            4: [
+                { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Amsterdam Centraal" },
+                { lat: 52.0928, lng: 5.1143, icon: "🚉", title: "Utrecht Centraal" },
+                { lat: 52.0907, lng: 5.1214, icon: "🏰", title: "Torre del Dom & Oudegracht" }
+            ],
+            5: [
+                { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Partenza Amsterdam" },
+                { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
+                { lat: 51.9202, lng: 4.4860, icon: "🛒", title: "Markthal" },
+                { lat: 51.9203, lng: 4.4900, icon: "📸", title: "Case Cubiche" }
+            ],
+            6: [
+                { lat: 51.9090, lng: 4.4800, icon: "⛵", title: "Imbarco Waterbus" },
+                { lat: 51.8833, lng: 4.6333, icon: "🌾", title: "Mulini di Kinderdijk" },
+                { lat: 51.9056, lng: 4.4497, icon: "🏘️", title: "Delfshaven storici" }
+            ],
+            7: [
+                { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
+                { lat: 52.0804, lng: 4.3143, icon: "🏛️", title: "Mauritshuis & Binnenhof" },
+                { lat: 52.1153, lng: 4.2783, icon: "🌊", title: "Spiaggia Scheveningen" }
+            ],
+            8: [
+                { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
+                { lat: 52.0116, lng: 4.3592, icon: "🏺", title: "Delft Centro" },
+                { lat: 51.9054, lng: 4.4666, icon: "🗼", title: "Torre Euromast (RTM)" }
+            ],
+            9: [
+                { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
+                { lat: 52.3105, lng: 4.7683, icon: "✈️", title: "Aeroporto Schiphol" }
+            ]
+        };
+
+        // 4. Logica Layer
+        var overviewLayerGroup = L.layerGroup();
+        var currentDayLayerGroup = L.layerGroup();
+        var activeDay = null;
+        var overviewMarkers = [];
+        var activeDayMarkers = [];
+
+        // Genera Overview
+        function createOverview() {
+            overviewData.forEach(function(p) {
+                var customIcon = L.divIcon({ className: 'custom-div-icon', html: '<div class="pin-inner">' + p.num + '</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+                var popupHTML = `<div class="custom-popup"><img src="${p.img}"><h4>${p.titolo}</h4></div>`;
+                var marker = L.marker([p.lat, p.lng], { icon: customIcon }).bindPopup(popupHTML);
+                overviewMarkers.push(marker);
+                overviewLayerGroup.addLayer(marker);
+            });
+            var poly = L.polyline(overviewPolylineCoords, { color: '#e65100', weight: 3, opacity: 0.5, dashArray: '8, 8' });
+            overviewLayerGroup.addLayer(poly);
+        }
+
+        // Mostra Overview
+        function showOverview() {
+            map.removeLayer(currentDayLayerGroup);
+            overviewLayerGroup.addTo(map);
+            var groupBounds = L.featureGroup(overviewMarkers).getBounds();
+            map.fitBounds(groupBounds, { padding: [30, 30] });
+        }
+
+        // Mostra Dettaglio Giorno (con lettere A, B, C...)
+        function showDay(dayNum) {
+            map.removeLayer(overviewLayerGroup);
+            currentDayLayerGroup.clearLayers();
+            activeDayMarkers = [];
+            var coords = [];
+
+            var points = dayData[dayNum];
+            if(points) {
+                points.forEach(function(p, index) {
+                    var letter = String.fromCharCode(65 + index); // Converte 0,1,2 in A,B,C
+                    
+                    var iconHtml = `
+                        <div class="pin-detail">
+                            <span class="pin-letter">${letter}</span>
+                            <span class="pin-icon">${p.icon}</span>
+                        </div>
+                    `;
+                    
+                    var customIcon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [56, 34], iconAnchor: [28, 17] });
+                    var marker = L.marker([p.lat, p.lng], { icon: customIcon }).bindPopup(`<b>${letter}. ${p.title}</b>`);
+                    
+                    activeDayMarkers.push(marker);
+                    currentDayLayerGroup.addLayer(marker);
+                    coords.push([p.lat, p.lng]);
+                });
+
+                if(coords.length > 1) {
+                    var poly = L.polyline(coords, { color: '#004b87', weight: 4, opacity: 0.8 });
+                    currentDayLayerGroup.addLayer(poly);
+                }
+
+                currentDayLayerGroup.addTo(map);
+                
+                // Fit bounds dinamico
                 if (coords.length === 1) {
                     map.setView(coords[0], 14);
                 } else {
