@@ -72,11 +72,12 @@ header {
   padding: 0.65rem 1.5rem;
   flex: 0 0 auto;
   box-shadow: 0 2px 10px rgba(224,80,0,0.3);
-  z-index: 20;
+  z-index: 1010; /* Higher z-index for header */
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  position: relative;
 }
 
 .header-left h1 {
@@ -94,6 +95,12 @@ header {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-top: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .header-stats {
@@ -127,6 +134,73 @@ header {
 }
 
 /* ==============================
+   HAMBURGER MENU (MOBILE)
+============================== */
+.hamburger-btn {
+  display: none; /* Hidden by default */
+  width: 30px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1011;
+  flex-direction: column;
+  justify-content: space-around;
+}
+.hamburger-btn span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s;
+}
+.hamburger-btn.open span:nth-child(1) {
+  transform: translateY(10px) rotate(45deg);
+}
+.hamburger-btn.open span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger-btn.open span:nth-child(3) {
+  transform: translateY(-11px) rotate(-45deg);
+}
+
+.mobile-nav {
+  display: none; /* Hidden by default */
+  position: fixed;
+  top: 61px; /* Height of header */
+  left: 0;
+  width: 100%;
+  background: white;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  flex-direction: column;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-nav-link {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.9rem 1.5rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+}
+.mobile-nav-link:hover {
+  background: var(--cream);
+}
+.mobile-nav-link.active {
+    color: var(--orange);
+    background: var(--orange-light);
+}
+
+
+/* ==============================
    MAIN LAYOUT
 ============================== */
 .app-body {
@@ -143,7 +217,14 @@ header {
   position: relative;
   padding: 1.1rem;
   padding-right: 0.6rem;
+  transition: flex-basis 0.4s ease, padding 0.4s ease; /* Smooth transition */
 }
+.map-wrapper.hidden {
+    flex-basis: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 #map {
   height: 100%;
   width: 100%;
@@ -180,12 +261,14 @@ header {
   height: 100%;
   overflow: hidden;
   padding: 1.1rem 1.1rem 1.1rem 0.5rem;
+  transition: flex-basis 0.4s ease; /* Smooth transition */
+}
+.content-wrapper.full-width {
+    flex-basis: 100%;
 }
 
 /* ==============================
-   JOURNEY STRIP — SIGNATURE ELEMENT
-   Barra di navigazione rapida per giorno,
-   colorata per città (AMS/UTR/RTM)
+   JOURNEY STRIP
 ============================== */
 .journey-strip {
   flex: 0 0 auto;
@@ -254,7 +337,7 @@ header {
 .js-day.ret:hover, .js-day.ret.active { background: #F3F4F6; border-color: var(--text-muted); }
 
 /* ==============================
-   TABS
+   TABS (DESKTOP)
 ============================== */
 .tabs {
   flex: 0 0 auto;
@@ -304,428 +387,137 @@ header {
 .tab-content::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 
 /* ==============================
-   TAB HINT
+   DAY CARDS, TIMELINE, FOOD CARDS, INFO CARDS... (unchanged)
 ============================== */
-.tab-hint {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  margin-bottom: 0.9rem;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  display: flex;
-  gap: 6px;
-  align-items: flex-start;
-}
-
-/* ==============================
-   DAY CARDS
-============================== */
-.day-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  margin-bottom: 0.85rem;
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.22s ease;
-  overflow: hidden;
-}
+.day-card { background: var(--card); border-radius: var(--radius); margin-bottom: 0.85rem; box-shadow: var(--shadow-sm); cursor: pointer; border: 2px solid transparent; transition: all 0.22s ease; overflow: hidden; }
 .day-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-
-/* City color variants */
-.day-card.ams  { border-left: 5px solid var(--orange); }
-.day-card.utr  { border-left: 5px solid var(--purple); }
-.day-card.rtm  { border-left: 5px solid var(--blue); }
-.day-card.ret  { border-left: 5px solid var(--text-muted); }
-
-.day-card.ams.selected  { border-color: var(--orange);  background: var(--orange-light); }
-.day-card.utr.selected  { border-color: var(--purple);  background: var(--purple-light); }
-.day-card.rtm.selected  { border-color: var(--blue);    background: var(--blue-light);   }
-.day-card.ret.selected  { border-color: var(--text-muted); background: #F9FAFB;          }
-
-.day-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 1.1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.day-num-badge {
-  flex: 0 0 auto;
-  width: 42px; height: 42px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.1;
-}
+.day-card.ams { border-left: 5px solid var(--orange); }
+.day-card.utr { border-left: 5px solid var(--purple); }
+.day-card.rtm { border-left: 5px solid var(--blue); }
+.day-card.ret { border-left: 5px solid var(--text-muted); }
+.day-card.ams.selected { border-color: var(--orange); background: var(--orange-light); }
+.day-card.utr.selected { border-color: var(--purple); background: var(--purple-light); }
+.day-card.rtm.selected { border-color: var(--blue); background: var(--blue-light); }
+.day-card.ret.selected { border-color: var(--text-muted); background: #F9FAFB; }
+.day-card-header { display: flex; align-items: center; gap: 0.85rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); }
+.day-num-badge { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
 .day-num-badge .num { font-size: 1.25rem; font-weight: 700; }
 .day-num-badge .glabel { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
-
-.day-card.ams .day-num-badge  { background: var(--orange-light); color: var(--orange); }
-.day-card.utr .day-num-badge  { background: var(--purple-light); color: var(--purple); }
-.day-card.rtm .day-num-badge  { background: var(--blue-light);   color: var(--blue);   }
-.day-card.ret .day-num-badge  { background: #F3F4F6;             color: var(--text-mid); }
-
+.day-card.ams .day-num-badge { background: var(--orange-light); color: var(--orange); }
+.day-card.utr .day-num-badge { background: var(--purple-light); color: var(--purple); }
+.day-card.rtm .day-num-badge { background: var(--blue-light); color: var(--blue); }
+.day-card.ret .day-num-badge { background: #F3F4F6; color: var(--text-mid); }
 .day-card-title-area { flex: 1; min-width: 0; }
-.day-card-title-area h3 {
-  margin: 0 0 4px 0;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.3;
-}
-
-.city-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 8px;
-  border-radius: 20px;
-}
-.city-badge.ams  { background: var(--orange-light); color: var(--orange); }
-.city-badge.utr  { background: var(--purple-light); color: var(--purple); }
-.city-badge.rtm  { background: var(--blue-light);   color: var(--blue);   }
-.city-badge.home { background: #F3F4F6;             color: var(--text-mid); }
-
-.sleep-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--blue);
-  color: white;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
+.day-card-title-area h3 { margin: 0 0 4px 0; font-family: 'Playfair Display', Georgia, serif; font-size: 0.98rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+.city-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 20px; }
+.city-badge.ams { background: var(--orange-light); color: var(--orange); }
+.city-badge.utr { background: var(--purple-light); color: var(--purple); }
+.city-badge.rtm { background: var(--blue-light); color: var(--blue); }
+.city-badge.home { background: #F3F4F6; color: var(--text-mid); }
+.sleep-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--blue); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; margin-left: auto; }
 .day-card-body { padding: 0.85rem 1.1rem; }
-
-/* ==============================
-   TIMELINE
-============================== */
-.timeline {
-  list-style: none;
-  padding: 0; margin: 0;
-}
-.timeline li {
-  position: relative;
-  padding: 5px 0 5px 1.35rem;
-  margin-bottom: 3px;
-  font-size: 0.86rem;
-  color: var(--text-mid);
-}
-.timeline li::before {
-  content: '';
-  position: absolute;
-  left: 4px; top: 12px;
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--orange);
-}
-.timeline li:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 7px; top: 19px;
-  width: 1px; bottom: -1px;
-  background: var(--border);
-}
-
+.timeline { list-style: none; padding: 0; margin: 0; }
+.timeline li { position: relative; padding: 5px 0 5px 1.35rem; margin-bottom: 3px; font-size: 0.86rem; color: var(--text-mid); }
+.timeline li::before { content: ''; position: absolute; left: 4px; top: 12px; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); }
+.timeline li:not(:last-child)::after { content: ''; position: absolute; left: 7px; top: 19px; width: 1px; bottom: -1px; background: var(--border); }
 .day-card.utr .timeline li::before { background: var(--purple); }
 .day-card.rtm .timeline li::before { background: var(--blue); }
 .day-card.ret .timeline li::before { background: var(--text-muted); }
-
-.time-badge {
-  font-weight: 700;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-right: 4px;
-  color: var(--orange);
-}
+.time-badge { font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 4px; color: var(--orange); }
 .day-card.utr .time-badge { color: var(--purple); }
 .day-card.rtm .time-badge { color: var(--blue); }
 .day-card.ret .time-badge { color: var(--text-mid); }
-
-/* Meal section */
-.meal-section {
-  margin-top: 0.75rem;
-  padding: 0.8rem 0.95rem;
-  background: var(--cream);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-.meal-section h4 {
-  margin: 0 0 0.45rem 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--green);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-.meal-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  border-bottom: 1px dashed var(--border);
-  font-size: 0.84rem;
-  color: var(--text-mid);
-}
+.meal-section { margin-top: 0.75rem; padding: 0.8rem 0.95rem; background: var(--cream); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.meal-section h4 { margin: 0 0 0.45rem 0; font-size: 0.72rem; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.07em; }
+.meal-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--border); font-size: 0.84rem; color: var(--text-mid); }
 .meal-item:last-child { border-bottom: none; padding-bottom: 0; }
-.meal-type {
-  font-size: 0.62rem;
-  background: white;
-  border: 1px solid var(--border);
-  color: var(--text-mid);
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-weight: 700;
-  text-transform: uppercase;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-/* Links */
-.gmaps-link {
-  color: var(--blue);
-  text-decoration: none;
-  font-weight: 600;
-  border-bottom: 1px solid var(--blue-border);
-  transition: all 0.15s;
-}
+.meal-type { font-size: 0.62rem; background: white; border: 1px solid var(--border); color: var(--text-mid); padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase; flex-shrink: 0; margin-left: auto; }
+.gmaps-link { color: var(--blue); text-decoration: none; font-weight: 600; border-bottom: 1px solid var(--blue-border); transition: all 0.15s; }
 .gmaps-link:hover { color: var(--orange); border-color: var(--orange); }
-
-/* ==============================
-   FOOD TAB
-============================== */
-.section-title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.08rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 1.5rem 0 0.85rem 0;
-  padding-bottom: 0.55rem;
-  border-bottom: 2px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.section-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.08rem; font-weight: 700; color: var(--text); margin: 1.5rem 0 0.85rem 0; padding-bottom: 0.55rem; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 8px; }
 .section-title:first-child { margin-top: 0.2rem; }
-
-.food-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 1rem 1.1rem;
-  margin-bottom: 0.8rem;
-  box-shadow: var(--shadow-sm);
-  border-left: 4px solid var(--green);
-}
+.food-card { background: var(--card); border-radius: var(--radius); padding: 1rem 1.1rem; margin-bottom: 0.8rem; box-shadow: var(--shadow-sm); border-left: 4px solid var(--green); }
 .food-card.street { border-left-color: var(--red); }
-
-.food-card h3 {
-  margin: 0 0 0.45rem 0;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: var(--text);
-}
-.food-desc {
-  font-size: 0.85rem;
-  color: var(--text-mid);
-  margin-bottom: 0.65rem;
-  line-height: 1.55;
-}
-
+.food-card h3 { margin: 0 0 0.45rem 0; font-family: 'Playfair Display', Georgia, serif; font-size: 0.98rem; font-weight: 700; color: var(--text); }
+.food-desc { font-size: 0.85rem; color: var(--text-mid); margin-bottom: 0.65rem; line-height: 1.55; }
 .tag-container { margin-bottom: 0.55rem; display: flex; flex-wrap: wrap; gap: 4px; }
-.tag {
-  display: inline-block;
-  padding: 2px 9px;
-  border-radius: 20px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
+.tag { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .tag.etnico { background: var(--orange-light); color: var(--orange); }
-.tag.pesce  { background: var(--blue-light);   color: var(--blue);   }
-.tag.veg    { background: var(--green-light);  color: var(--green);  }
-.tag.dolce  { background: #FEF0F6; color: #B5338A; }
+.tag.pesce { background: var(--blue-light); color: var(--blue); }
+.tag.veg { background: var(--green-light); color: var(--green); }
+.tag.dolce { background: #FEF0F6; color: #B5338A; }
 .tag.street { background: #F3F4F6; color: var(--text-mid); }
-.tag.trad   { background: #FFF7E6; color: #9A6010; }
-
-.review-box {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 0.7rem 0.9rem;
-  background: var(--cream);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  font-size: 0.82rem;
-}
-.pro    { color: var(--green); font-weight: 600; display: flex; gap: 6px; }
-.contro { color: var(--red);   font-weight: 600; display: flex; gap: 6px; }
-
-/* ==============================
-   INFO UTILI TAB
-============================== */
-.info-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 0.95rem 1.1rem;
-  margin-bottom: 0.75rem;
-  box-shadow: var(--shadow-sm);
-  font-size: 0.86rem;
-}
-.info-card h4 {
-  margin: 0 0 0.4rem 0;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.tag.trad { background: #FFF7E6; color: #9A6010; }
+.review-box { display: flex; flex-direction: column; gap: 5px; padding: 0.7rem 0.9rem; background: var(--cream); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.82rem; }
+.pro { color: var(--green); font-weight: 600; display: flex; gap: 6px; }
+.contro { color: var(--red); font-weight: 600; display: flex; gap: 6px; }
+.info-card { background: var(--card); border-radius: var(--radius); padding: 0.95rem 1.1rem; margin-bottom: 0.75rem; box-shadow: var(--shadow-sm); font-size: 0.86rem; }
+.info-card h4 { margin: 0 0 0.4rem 0; font-weight: 700; font-size: 0.9rem; color: var(--text); display: flex; align-items: center; gap: 6px; }
 .info-card p { margin: 0; color: var(--text-mid); line-height: 1.55; }
 .info-card ul { margin: 0.4rem 0 0 1.1rem; padding: 0; color: var(--text-mid); line-height: 1.7; }
-
-.tip {
-  margin-top: 0.55rem;
-  padding: 6px 10px;
-  background: var(--orange-light);
-  border-radius: 6px;
-  border-left: 3px solid var(--orange);
-  color: var(--orange-mid);
-  font-weight: 500;
-  font-size: 0.8rem;
-}
-.tip.blue {
-  background: var(--blue-light);
-  border-left-color: var(--blue);
-  color: var(--blue);
-}
-.tip.green {
-  background: var(--green-light);
-  border-left-color: var(--green);
-  color: var(--green);
-}
-
+.tip { margin-top: 0.55rem; padding: 6px 10px; background: var(--orange-light); border-radius: 6px; border-left: 3px solid var(--orange); color: var(--orange-mid); font-weight: 500; font-size: 0.8rem; }
+.tip.blue { background: var(--blue-light); border-left-color: var(--blue); color: var(--blue); }
+.tip.green { background: var(--green-light); border-left-color: var(--green); color: var(--green); }
 .budget-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
-.budget-table th {
-  text-align: left;
-  padding: 6px 10px;
-  background: var(--cream);
-  color: var(--text-muted);
-  font-weight: 700;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+.budget-table th { text-align: left; padding: 6px 10px; background: var(--cream); color: var(--text-muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .budget-table td { padding: 7px 10px; border-top: 1px solid var(--border); color: var(--text); }
 .budget-table td:last-child { font-weight: 700; color: var(--blue); text-align: right; }
 .budget-table tr.total td { background: var(--blue-light); font-weight: 800; }
-
-/* ==============================
-   MAP PINS
-============================== */
 .custom-div-icon { background: transparent; border: none; }
-
-.pin-inner {
-  background: var(--orange-mid);
-  border: 2.5px solid white;
-  color: white;
-  font-weight: 700;
-  text-align: center;
-  border-radius: 50%;
-  line-height: 28px;
-  font-size: 0.82rem;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-  width: 30px; height: 30px;
-  transition: transform 0.2s, background 0.2s;
-  font-family: 'Inter', sans-serif;
-}
-.pin-inner.active {
-  transform: scale(1.7);
-  background: var(--blue);
-  border-color: var(--orange);
-  box-shadow: 0 5px 16px rgba(0,0,0,0.35);
-  z-index: 1000;
-}
-.pin-detail {
-  background: var(--blue);
-  border: 2.5px solid white;
-  color: white;
-  border-radius: 18px;
-  height: 34px; width: 58px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-  transition: transform 0.2s;
-  font-family: 'Inter', sans-serif;
-}
-.pin-detail.active {
-  transform: scale(1.3);
-  background: var(--orange);
-  box-shadow: 0 5px 16px rgba(0,0,0,0.35);
-  z-index: 1000;
-}
+.pin-inner { background: var(--orange-mid); border: 2.5px solid white; color: white; font-weight: 700; text-align: center; border-radius: 50%; line-height: 28px; font-size: 0.82rem; box-shadow: 0 3px 10px rgba(0,0,0,0.25); width: 30px; height: 30px; transition: transform 0.2s, background 0.2s; font-family: 'Inter', sans-serif; }
+.pin-inner.active { transform: scale(1.7); background: var(--blue); border-color: var(--orange); box-shadow: 0 5px 16px rgba(0,0,0,0.35); z-index: 1000; }
+.pin-detail { background: var(--blue); border: 2.5px solid white; color: white; border-radius: 18px; height: 34px; width: 58px; box-shadow: 0 3px 10px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; gap: 4px; transition: transform 0.2s; font-family: 'Inter', sans-serif; }
+.pin-detail.active { transform: scale(1.3); background: var(--orange); box-shadow: 0 5px 16px rgba(0,0,0,0.35); z-index: 1000; }
 .pin-letter { font-weight: 800; font-size: 1rem; }
-.pin-icon   { font-size: 1.1rem; }
-
+.pin-icon { font-size: 1.1rem; }
 .custom-popup { width: 220px; }
 .custom-popup img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
 .custom-popup h4 { margin: 0 0 3px; color: var(--blue); font-family: 'Playfair Display', serif; font-size: 1rem; }
-.custom-popup p  { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+.custom-popup p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
 
 /* ==============================
    RESPONSIVE
 ============================== */
 @media (max-width: 992px) {
-  /* Keep the entire UI within 100vh — nothing scrolls at the page level */
   html, body { overflow: hidden; height: 100%; }
 
   .app-body {
     flex-direction: column;
     overflow: hidden;
-    height: auto; /* inherits flex: 1 from parent */
+    height: auto;
   }
 
-  /* Map: fixed height slice at the top */
   .map-wrapper {
-    flex: 0 0 36vh;
+    flex: 0 0 36vh !important; /* Override inline styles */
     width: 100%;
-    padding: 0;
+    padding: 0 !important; /* Override inline styles */
     z-index: 10;
+  }
+  .map-wrapper.hidden {
+      flex-basis: 0 !important; /* Still hide it if needed */
+      height: 0;
   }
   #map { border-radius: 0; border: none; height: 100%; }
   .map-hint { display: none; }
 
-  /* Content panel: takes all remaining space, never overflows */
   .content-wrapper {
     flex: 1;
-    min-height: 0;          /* crucial: lets flex child shrink below content size */
+    min-height: 0;
     overflow: hidden;
     padding: 0.7rem 0.75rem 0.5rem;
     display: flex;
     flex-direction: column;
+    width: 100% !important; /* Override inline styles */
+    flex-basis: auto !important;
   }
 
-  /* Journey strip and tabs stay fixed — only tab-content scrolls */
-  .journey-strip { flex: 0 0 auto; }
-  .tabs          { flex: 0 0 auto; }
+  /* Hide desktop tabs and show hamburger */
+  .tabs { display: none; }
+  .hamburger-btn { display: flex; }
+  .mobile-nav { display: flex; }
 
+  .journey-strip { flex: 0 0 auto; }
+  
   .tab-content {
     flex: 1;
     min-height: 0;
@@ -734,12 +526,10 @@ header {
     padding-right: 0;
   }
 
-  /* Compact header on mobile */
-  header { padding: 0.5rem 0.9rem; }
+  header { padding: 0.5rem 0.9rem; height: 61px; }
   .header-left h1 { font-size: 1.1rem; }
   .header-stats { display: none; }
 
-  /* Slightly smaller day cards on mobile */
   .day-card-header { padding: 0.75rem 0.9rem; }
   .day-card-body   { padding: 0.75rem 0.9rem; }
 }
@@ -753,26 +543,31 @@ header {
 <header>
   <div class="header-left">
     <h1>🌷 Paesi Bassi in Treno &amp; Bici</h1>
-    <div class="subtitle">20–28 Giugno · Amsterdam · Utrecht · Rotterdam</div>
+    <div class="subtitle">20-28 Giugno</div>
   </div>
-  <div class="header-stats">
-    <div class="h-divider"></div>
-    <div class="h-stat">
-      <span class="h-stat-num">9</span>
-      <span class="h-stat-label">Giorni</span>
+  <div class="header-right">
+    <div class="header-stats">
+      <div class="h-divider"></div>
+      <div class="h-stat"><span class="h-stat-num">9</span><span class="h-stat-label">Giorni</span></div>
+      <div class="h-divider"></div>
+      <div class="h-stat"><span class="h-stat-num">4</span><span class="h-stat-label">Città</span></div>
+      <div class="h-divider"></div>
+      <div class="h-stat"><span class="h-stat-num">🚲</span><span class="h-stat-label">& Treno</span></div>
     </div>
-    <div class="h-divider"></div>
-    <div class="h-stat">
-      <span class="h-stat-num">4</span>
-      <span class="h-stat-label">Città</span>
-    </div>
-    <div class="h-divider"></div>
-    <div class="h-stat">
-      <span class="h-stat-num">🚲</span>
-      <span class="h-stat-label">& Treno</span>
-    </div>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </div>
 </header>
+
+<!-- MOBILE NAVIGATION -->
+<nav class="mobile-nav" id="mobile-nav">
+    <a href="#" class="mobile-nav-link active" data-tab="tab-itinerario">📅 Itinerario</a>
+    <a href="#" class="mobile-nav-link" data-tab="tab-cibo">🍴 Guida Cibo</a>
+    <a href="#" class="mobile-nav-link" data-tab="tab-info">💡 Info Utili</a>
+</nav>
 
 <!-- ============================
      BODY
@@ -780,13 +575,13 @@ header {
 <div class="app-body">
 
   <!-- MAPPA -->
-  <div class="map-wrapper">
+  <div class="map-wrapper" id="map-wrapper">
     <div id="map"></div>
     <div class="map-hint" id="map-hint">💡 Clicca un giorno per vedere le tappe dettagliate sulla mappa</div>
   </div>
 
   <!-- PANNELLO CONTENUTI -->
-  <div class="content-wrapper">
+  <div class="content-wrapper" id="content-wrapper">
 
     <!-- JOURNEY STRIP -->
     <div class="journey-strip">
@@ -804,18 +599,17 @@ header {
       </div>
     </div>
 
-    <!-- TABS -->
+    <!-- TABS (DESKTOP) -->
     <div class="tabs">
-      <button class="tab-btn active" onclick="openTab('tab-itinerario', this)">📅 Itinerario</button>
-      <button class="tab-btn" onclick="openTab('tab-cibo', this)">🍴 Guida Cibo</button>
-      <button class="tab-btn" onclick="openTab('tab-info', this)">💡 Info Utili</button>
+      <button class="tab-btn active" data-tab="tab-itinerario">📅 Itinerario</button>
+      <button class="tab-btn" data-tab="tab-cibo">🍴 Guida Cibo</button>
+      <button class="tab-btn" data-tab="tab-info">💡 Info Utili</button>
     </div>
 
     <!-- ========================
          TAB 1: ITINERARIO
     ======================== -->
     <div id="tab-itinerario" class="tab-content active">
-
       <!-- Giorno 1 -->
       <div class="day-card ams" data-day="1">
         <div class="day-card-header">
@@ -839,7 +633,7 @@ header {
           </div>
         </div>
       </div>
-
+      <!-- ... Rest of the day cards ... -->
       <!-- Giorno 2 -->
       <div class="day-card ams" data-day="2">
         <div class="day-card-header">
@@ -1027,222 +821,119 @@ header {
          TAB 2: GUIDA CIBO
     ======================== -->
     <div id="tab-cibo" class="tab-content">
-
-      <div class="section-title">🐟 Street Food &amp; Piatti da Non Perdere</div>
-
-      <div class="food-card street">
-        <h3>Kibbeling</h3>
-        <div class="tag-container"><span class="tag pesce">Pesce</span><span class="tag street">Street Food</span></div>
-        <p class="food-desc">Bocconcini di pesce bianco pastellati e fritti, serviti caldissimi con salsa all'aglio o tartara. Reperibili in ogni mercato del pesce.</p>
-        <div class="review-box">
-          <span class="pro">👍 Croccante e saporito. Piace a tutti, anche ai non amanti del pesce.</span>
-          <span class="contro">👎 Va mangiato subito: diventa gommoso e pesante se si raffredda.</span>
-        </div>
-      </div>
-
-      <div class="food-card street">
-        <h3>Haring (Aringa cruda)</h3>
-        <div class="tag-container"><span class="tag pesce">Pesce crudo</span><span class="tag trad">Tradizione</span></div>
-        <p class="food-desc">Aringa in salamoia con cipolla cruda e cetriolini. Consigliata nel panino (Broodje Haring) se è la prima volta.</p>
-        <div class="review-box">
-          <span class="pro">👍 L'esperienza locale definitiva. Consistenza burrosa e scioglievole.</span>
-          <span class="contro">👎 Sapore intenso e persistente. La cipolla cruda si farà sentire a lungo.</span>
-        </div>
-      </div>
-
-      <div class="food-card street">
-        <h3>Garnalenkroket &amp; Bitterballen Veg</h3>
-        <div class="tag-container"><span class="tag pesce">Pesce</span><span class="tag veg">Veg</span></div>
-        <p class="food-desc">Crocchette da pub. Provate quelle ai gamberetti grigi del Mare del Nord o le classiche vegetariane ai funghi e formaggio.</p>
-        <div class="review-box">
-          <span class="pro">👍 Lo snack perfetto da abbinare a una birra locale al bancone.</span>
-          <span class="contro">👎 L'interno è magma vulcanico! Attendere qualche minuto prima di mordere.</span>
-        </div>
-      </div>
-
-      <div class="food-card street">
-        <h3>Oude Kaas (Gouda Stagionato)</h3>
-        <div class="tag-container"><span class="tag veg">Formaggio</span><span class="tag street">Mercato</span></div>
-        <p class="food-desc">Gouda stagionato friabile, con cristalli di sale croccanti all'interno. Ottimo accompagnato dalla senape locale (mosterd).</p>
-        <div class="review-box">
-          <span class="pro">👍 Sapore umami intenso, da comprare ai banchi dei mercati rionali.</span>
-          <span class="contro">👎 Evitare i negozi turistici in centro: costosi e meno autentici.</span>
-        </div>
-      </div>
-
-      <div class="food-card street">
-        <h3>Stroopwafels &amp; Poffertjes</h3>
-        <div class="tag-container"><span class="tag dolce">Dolce</span></div>
-        <p class="food-desc">Cialde ripiene di caramello (Stroopwafel) da appoggiare sulla tazza calda, o mini-pancake al burro e zucchero a velo (Poffertjes).</p>
-        <div class="review-box">
-          <span class="pro">👍 Dolcissimi e confortanti, perfetti come pausa pomeridiana nei mercati.</span>
-          <span class="contro">👎 Gli Stroopwafels confezionati sono nulla in confronto a quelli fatti al momento.</span>
-        </div>
-      </div>
-
-      <div class="section-title">🥢 Ristoranti Selezionati</div>
-
-      <div class="food-card">
-        <h3>Waterkant 📍 Amsterdam</h3>
-        <div class="tag-container"><span class="tag etnico">Surinamese</span><span class="tag veg">Veg / Pesce</span></div>
-        <p class="food-desc">Sotto un parcheggio a spirale affacciato sul canale. Cucina del Suriname (ex colonia olandese) con atmosfera unica.</p>
-        <div class="review-box">
-          <span class="pro">👍 Roti Roll fantastico, location suggestiva e ottima selezione di birre.</span>
-          <span class="contro">👎 Spesso affollatissimo e rumoroso. Il servizio ai tavoli esterni può essere lento.</span>
-        </div>
-      </div>
-
-      <div class="food-card">
-        <h3>Bazar 📍 Rotterdam</h3>
-        <div class="tag-container"><span class="tag etnico">Medio Orientale</span><span class="tag veg">Veg / Pesce</span></div>
-        <p class="food-desc">Istituzione coloratissima in Witte de Withstraat: un'esplosione di lampade orientali e tavoli decorati.</p>
-        <div class="review-box">
-          <span class="pro">👍 Porzioni generose, prezzi onesti e pane arabo caldo sfornato in continuazione.</span>
-          <span class="contro">👎 Tavoli molto vicini tra loro, manca totalmente la privacy.</span>
-        </div>
-      </div>
-
-      <div class="food-card">
-        <h3>Kantjil &amp; De Tijger 📍 Amsterdam</h3>
-        <div class="tag-container"><span class="tag etnico">Indonesiano</span><span class="tag veg">Veg / Pesce</span></div>
-        <p class="food-desc">Locale spazioso in centro, perfetto per il Rijsttafel — il tradizionale "Tavolo di Riso" con 20+ piatti condivisi.</p>
-        <div class="review-box">
-          <span class="pro">👍 Posizione comoda, menù degustazione pescetariano facilmente richiedibile.</span>
-          <span class="contro">👎 Molto turistico e "industriale", manca del calore delle trattorie familiari.</span>
-        </div>
-      </div>
-
-      <div class="food-card">
-        <h3>Foodhallen (AMS) / Fenix Food Factory (RTM)</h3>
-        <div class="tag-container"><span class="tag etnico">Street Food</span><span class="tag veg">Veg / Pesce</span></div>
-        <p class="food-desc">Ex capannoni industriali riqualificati in mercati gastronomici coperti, con decine di stand internazionali.</p>
-        <div class="review-box">
-          <span class="pro">👍 Varietà immensa. Perfetti per gruppi: tacos di pesce, bao veg, sushi, pizza.</span>
-          <span class="contro">👎 Nelle ore di punta trovare posto a sedere è una sfida, soprattutto a Foodhallen.</span>
-        </div>
-      </div>
-
-      <div class="food-card">
-        <h3>Simonis aan Zee 📍 Scheveningen</h3>
-        <div class="tag-container"><span class="tag pesce">Pesce Locale</span></div>
-        <p class="food-desc">Gigantesco self-service di pesce sul porto turistico di Scheveningen. Il tempio del Kibbeling fresco.</p>
-        <div class="review-box">
-          <span class="pro">👍 Pesce freschissimo e porzioni generose. Un'esperienza autentica di porto olandese.</span>
-          <span class="contro">👎 Atmosfera spartana da mensa. Attenti ai gabbiani se mangiate fuori!</span>
-        </div>
-      </div>
-
-      <div class="food-card">
-        <h3>Little V 📍 Rotterdam (e L'Aia)</h3>
-        <div class="tag-container"><span class="tag etnico">Vietnamita</span><span class="tag veg">Veg / Pesce</span></div>
-        <p class="food-desc">Ristorante curatissimo che ricrea l'estetica di un giardino del sud-est asiatico. Ottimo per una cena speciale.</p>
-        <div class="review-box">
-          <span class="pro">👍 Cocktail freschi, involtini estivi perfetti e Pho di mare eccellente.</span>
-          <span class="contro">👎 Fascia medio-alta e prenotazione quasi obbligatoria con qualche giorno di anticipo.</span>
-        </div>
-      </div>
-
+        <!-- ... Food content ... -->
+        <div class="section-title">🐟 Street Food &amp; Piatti da Non Perdere</div>
+        <div class="food-card street"><h3>Kibbeling</h3><div class="tag-container"><span class="tag pesce">Pesce</span><span class="tag street">Street Food</span></div><p class="food-desc">Bocconcini di pesce bianco pastellati e fritti, serviti caldissimi con salsa all'aglio o tartara. Reperibili in ogni mercato del pesce.</p><div class="review-box"><span class="pro">👍 Croccante e saporito. Piace a tutti, anche ai non amanti del pesce.</span><span class="contro">👎 Va mangiato subito: diventa gommoso e pesante se si raffredda.</span></div></div>
+        <div class="food-card street"><h3>Haring (Aringa cruda)</h3><div class="tag-container"><span class="tag pesce">Pesce crudo</span><span class="tag trad">Tradizione</span></div><p class="food-desc">Aringa in salamoia con cipolla cruda e cetriolini. Consigliata nel panino (Broodje Haring) se è la prima volta.</p><div class="review-box"><span class="pro">👍 L'esperienza locale definitiva. Consistenza burrosa e scioglievole.</span><span class="contro">👎 Sapore intenso e persistente. La cipolla cruda si farà sentire a lungo.</span></div></div>
+        <div class="food-card street"><h3>Garnalenkroket &amp; Bitterballen Veg</h3><div class="tag-container"><span class="tag pesce">Pesce</span><span class="tag veg">Veg</span></div><p class="food-desc">Crocchette da pub. Provate quelle ai gamberetti grigi del Mare del Nord o le classiche vegetariane ai funghi e formaggio.</p><div class="review-box"><span class="pro">👍 Lo snack perfetto da abbinare a una birra locale al bancone.</span><span class="contro">👎 L'interno è magma vulcanico! Attendere qualche minuto prima di mordere.</span></div></div>
+        <div class="food-card street"><h3>Oude Kaas (Gouda Stagionato)</h3><div class="tag-container"><span class="tag veg">Formaggio</span><span class="tag street">Mercato</span></div><p class="food-desc">Gouda stagionato friabile, con cristalli di sale croccanti all'interno. Ottimo accompagnato dalla senape locale (mosterd).</p><div class="review-box"><span class="pro">👍 Sapore umami intenso, da comprare ai banchi dei mercati rionali.</span><span class="contro">👎 Evitare i negozi turistici in centro: costosi e meno autentici.</span></div></div>
+        <div class="food-card street"><h3>Stroopwafels &amp; Poffertjes</h3><div class="tag-container"><span class="tag dolce">Dolce</span></div><p class="food-desc">Cialde ripiene di caramello (Stroopwafel) da appoggiare sulla tazza calda, o mini-pancake al burro e zucchero a velo (Poffertjes).</p><div class="review-box"><span class="pro">👍 Dolcissimi e confortanti, perfetti come pausa pomeridiana nei mercati.</span><span class="contro">👎 Gli Stroopwafels confezionati sono nulla in confronto a quelli fatti al momento.</span></div></div>
+        <div class="section-title">🥢 Ristoranti Selezionati</div>
+        <div class="food-card"><h3>Waterkant 📍 Amsterdam</h3><div class="tag-container"><span class="tag etnico">Surinamese</span><span class="tag veg">Veg / Pesce</span></div><p class="food-desc">Sotto un parcheggio a spirale affacciato sul canale. Cucina del Suriname (ex colonia olandese) con atmosfera unica.</p><div class="review-box"><span class="pro">👍 Roti Roll fantastico, location suggestiva e ottima selezione di birre.</span><span class="contro">👎 Spesso affollatissimo e rumoroso. Il servizio ai tavoli esterni può essere lento.</span></div></div>
+        <div class="food-card"><h3>Bazar 📍 Rotterdam</h3><div class="tag-container"><span class="tag etnico">Medio Orientale</span><span class="tag veg">Veg / Pesce</span></div><p class="food-desc">Istituzione coloratissima in Witte de Withstraat: un'esplosione di lampade orientali e tavoli decorati.</p><div class="review-box"><span class="pro">👍 Porzioni generose, prezzi onesti e pane arabo caldo sfornato in continuazione.</span><span class="contro">👎 Tavoli molto vicini tra loro, manca totalmente la privacy.</span></div></div>
+        <div class="food-card"><h3>Kantjil &amp; De Tijger 📍 Amsterdam</h3><div class="tag-container"><span class="tag etnico">Indonesiano</span><span class="tag veg">Veg / Pesce</span></div><p class="food-desc">Locale spazioso in centro, perfetto per il Rijsttafel — il tradizionale "Tavolo di Riso" con 20+ piatti condivisi.</p><div class="review-box"><span class="pro">👍 Posizione comoda, menù degustazione pescetariano facilmente richiedibile.</span><span class="contro">👎 Molto turistico e "industriale", manca del calore delle trattorie familiari.</span></div></div>
+        <div class="food-card"><h3>Foodhallen (AMS) / Fenix Food Factory (RTM)</h3><div class="tag-container"><span class="tag etnico">Street Food</span><span class="tag veg">Veg / Pesce</span></div><p class="food-desc">Ex capannoni industriali riqualificati in mercati gastronomici coperti, con decine di stand internazionali.</p><div class="review-box"><span class="pro">👍 Varietà immensa. Perfetti per gruppi: tacos di pesce, bao veg, sushi, pizza.</span><span class="contro">👎 Nelle ore di punta trovare posto a sedere è una sfida, soprattutto a Foodhallen.</span></div></div>
+        <div class="food-card"><h3>Simonis aan Zee 📍 Scheveningen</h3><div class="tag-container"><span class="tag pesce">Pesce Locale</span></div><p class="food-desc">Gigantesco self-service di pesce sul porto turistico di Scheveningen. Il tempio del Kibbeling fresco.</p><div class="review-box"><span class="pro">👍 Pesce freschissimo e porzioni generose. Un'esperienza autentica di porto olandese.</span><span class="contro">👎 Atmosfera spartana da mensa. Attenti ai gabbiani se mangiate fuori!</span></div></div>
+        <div class="food-card"><h3>Little V 📍 Rotterdam (e L'Aia)</h3><div class="tag-container"><span class="tag etnico">Vietnamita</span><span class="tag veg">Veg / Pesce</span></div><p class="food-desc">Ristorante curatissimo che ricrea l'estetica di un giardino del sud-est asiatico. Ottimo per una cena speciale.</p><div class="review-box"><span class="pro">👍 Cocktail freschi, involtini estivi perfetti e Pho di mare eccellente.</span><span class="contro">👎 Fascia medio-alta e prenotazione quasi obbligatoria con qualche giorno di anticipo.</span></div></div>
     </div><!-- /tab-cibo -->
 
     <!-- ========================
          TAB 3: INFO UTILI
     ======================== -->
     <div id="tab-info" class="tab-content">
-
-      <div class="section-title">🚆 Trasporti</div>
-
-      <div class="info-card">
-        <h4>🎫 OV-chipkaart — La tessera tutto-in-uno</h4>
-        <p>Indispensabile per treni NS, metro, tram e autobus in tutta l'Olanda. Si acquista nelle biglietterie NS in stazione (€7,50 per la card + ricarica a piacere).</p>
-        <div class="tip">💡 Ricordarsi sempre di fare <strong>check-in</strong> all'ingresso e <strong>check-out</strong> all'uscita — il sistema addebita automaticamente la tariffa esatta.</div>
-      </div>
-
-      <div class="info-card">
-        <h4>🚉 Treni NS — Veloci e frequenti</h4>
-        <p>I treni intercity collegano le principali città ogni 15–30 minuti. Ecco i principali tragitti dal vostro itinerario:</p>
-        <ul>
-          <li>Amsterdam → Utrecht: ~30 min</li>
-          <li>Amsterdam → Rotterdam: ~40 min (Intercity Direct)</li>
-          <li>Rotterdam → L'Aia: ~25 min</li>
-          <li>Rotterdam → Delft: ~12 min</li>
-          <li>Rotterdam → Schiphol: ~25 min (IC Direct)</li>
-        </ul>
-        <div class="tip blue">🌐 Orari e biglietti: <a href="https://www.ns.nl" target="_blank" class="gmaps-link">www.ns.nl</a></div>
-      </div>
-
-      <div class="info-card">
-        <h4>🚌 Trasporti locali nelle città</h4>
-        <p>Tutte le città hanno reti di tram, metro e bus integrate con l'OV-chipkaart. Ad Amsterdam la GVB copre tram e metro; a Rotterdam la RET; a L'Aia la HTM.</p>
-        <div class="tip">💡 I traghetti gratuiti di Amsterdam (es. verso NDSM) non richiedono l'OV-chipkaart.</div>
-      </div>
-
-      <div class="section-title">🚲 Biciclette</div>
-
-      <div class="info-card">
-        <h4>🔑 OV-fiets — Bici in abbonamento NS</h4>
-        <p>Con la OV-chipkaart si possono noleggiare bici OV-fiets direttamente nelle stazioni NS a soli €4,25 per 24 ore. Disponibili in tutte le stazioni del viaggio.</p>
-        <div class="tip green">💡 Le OV-fiets sono bici solide e comode (ma pesanti). Perfette per esplorare centri città. Sono disponibili H24 e si restituiscono in qualsiasi stazione NS.</div>
-      </div>
-
-      <div class="info-card">
-        <h4>🚲 Noleggio tradizionale</h4>
-        <p>Per bici più leggere o di qualità superiore: <strong>MacBike</strong> e <strong>Star Bikes</strong> ad Amsterdam (€12–18/giorno). A Rotterdam: <strong>Yellow Bike</strong> vicino alla stazione Centraal.</p>
-        <div class="tip">💡 Ad Amsterdam il traffico ciclabile è molto intenso. Seguire sempre i sensi di marcia delle piste ciclabili!</div>
-      </div>
-
-      <div class="section-title">💳 Pagamenti</div>
-
-      <div class="info-card">
-        <h4>💳 I Paesi Bassi sono (quasi) cashless</h4>
-        <p>Tra i più avanzati in Europa nel pagamento elettronico. Moltissimi locali <strong>non accettano contanti</strong>. Visa e Mastercard sono accettate ovunque.</p>
-        <div class="tip">💡 Tenete €30–50 in contanti per i chioschi di aringa, i mercati all'aperto e le mance eventuali.</div>
-      </div>
-
-      <div class="section-title">🌤️ Meteo di Giugno</div>
-
-      <div class="info-card">
-        <h4>🌦️ Cosa aspettarsi</h4>
-        <p>Giugno è uno dei mesi migliori per visitare i Paesi Bassi: temperature tra 16°C e 23°C e giornate lunghissime (tramonto intorno alle 22:00). Le piogge brevi e improvvise sono comunque frequenti.</p>
-        <div class="tip">💡 Regola del <em>layering</em>: felpa leggera + impermeabile compatto sono i compagni ideali. Le mattine possono essere fresche (12–15°C).</div>
-      </div>
-
-      <div class="section-title">💰 Budget Indicativo</div>
-
-      <div class="info-card">
-        <table class="budget-table">
-          <thead><tr><th>Voce spesa</th><th>Stima / giorno</th></tr></thead>
-          <tbody>
-            <tr><td>🍽️ Pasti (pranzo + cena + snack)</td><td>€30–45</td></tr>
-            <tr><td>🚆 Trasporti (treno + città)</td><td>€10–22</td></tr>
-            <tr><td>🎟️ Musei &amp; ingressi</td><td>€15–28</td></tr>
-            <tr><td>🚲 Bici (OV-fiets)</td><td>€4–8</td></tr>
-            <tr><td>🍺 Drink &amp; varie</td><td>€10–20</td></tr>
-            <tr class="total"><td><strong>Totale stimato</strong></td><td><strong>€70–125</strong></td></tr>
-          </tbody>
-        </table>
-        <div class="tip blue" style="margin-top:0.75rem">💡 Il costo della vita è medio-alto. Evitare i ristoranti nella zona dei canali di Amsterdam a ora di pranzo: i prezzi salgono del 30–40% rispetto ai quartieri residenziali.</div>
-      </div>
-
+        <!-- ... Info content ... -->
+        <div class="section-title">🚆 Trasporti</div>
+        <div class="info-card"><h4>🎫 OV-chipkaart — La tessera tutto-in-uno</h4><p>Indispensabile per treni NS, metro, tram e autobus in tutta l'Olanda. Si acquista nelle biglietterie NS in stazione (€7,50 per la card + ricarica a piacere).</p><div class="tip">💡 Ricordarsi sempre di fare <strong>check-in</strong> all'ingresso e <strong>check-out</strong> all'uscita — il sistema addebita automaticamente la tariffa esatta.</div></div>
+        <div class="info-card"><h4>🚉 Treni NS — Veloci e frequenti</h4><p>I treni intercity collegano le principali città ogni 15–30 minuti. Ecco i principali tragitti dal vostro itinerario:</p><ul><li>Amsterdam → Utrecht: ~30 min</li><li>Amsterdam → Rotterdam: ~40 min (Intercity Direct)</li><li>Rotterdam → L'Aia: ~25 min</li><li>Rotterdam → Delft: ~12 min</li><li>Rotterdam → Schiphol: ~25 min (IC Direct)</li></ul><div class="tip blue">🌐 Orari e biglietti: <a href="https://www.ns.nl" target="_blank" class="gmaps-link">www.ns.nl</a></div></div>
+        <div class="info-card"><h4>🚌 Trasporti locali nelle città</h4><p>Tutte le città hanno reti di tram, metro e bus integrate con l'OV-chipkaart. Ad Amsterdam la GVB copre tram e metro; a Rotterdam la RET; a L'Aia la HTM.</p><div class="tip">💡 I traghetti gratuiti di Amsterdam (es. verso NDSM) non richiedono l'OV-chipkaart.</div></div>
+        <div class="section-title">🚲 Biciclette</div>
+        <div class="info-card"><h4>🔑 OV-fiets — Bici in abbonamento NS</h4><p>Con la OV-chipkaart si possono noleggiare bici OV-fiets direttamente nelle stazioni NS a soli €4,25 per 24 ore. Disponibili in tutte le stazioni del viaggio.</p><div class="tip green">💡 Le OV-fiets sono bici solide e comode (ma pesanti). Perfette per esplorare centri città. Sono disponibili H24 e si restituiscono in qualsiasi stazione NS.</div></div>
+        <div class="info-card"><h4>🚲 Noleggio tradizionale</h4><p>Per bici più leggere o di qualità superiore: <strong>MacBike</strong> e <strong>Star Bikes</strong> ad Amsterdam (€12–18/giorno). A Rotterdam: <strong>Yellow Bike</strong> vicino alla stazione Centraal.</p><div class="tip">💡 Ad Amsterdam il traffico ciclabile è molto intenso. Seguire sempre i sensi di marcia delle piste ciclabili!</div></div>
+        <div class="section-title">💳 Pagamenti</div>
+        <div class="info-card"><h4>💳 I Paesi Bassi sono (quasi) cashless</h4><p>Tra i più avanzati in Europa nel pagamento elettronico. Moltissimi locali <strong>non accettano contanti</strong>. Visa e Mastercard sono accettate ovunque.</p><div class="tip">💡 Tenete €30–50 in contanti per i chioschi di aringa, i mercati all'aperto e le mance eventuali.</div></div>
+        <div class="section-title">🌤️ Meteo di Giugno</div>
+        <div class="info-card"><h4>🌦️ Cosa aspettarsi</h4><p>Giugno è uno dei mesi migliori per visitare i Paesi Bassi: temperature tra 16°C e 23°C e giornate lunghissime (tramonto intorno alle 22:00). Le piogge brevi e improvvise sono comunque frequenti.</p><div class="tip">💡 Regola del <em>layering</em>: felpa leggera + impermeabile compatto sono i compagni ideali. Le mattine possono essere fresche (12–15°C).</div></div>
+        <div class="section-title">💰 Budget Indicativo</div>
+        <div class="info-card"><table class="budget-table"><thead><tr><th>Voce spesa</th><th>Stima / giorno</th></tr></thead><tbody><tr><td>🍽️ Pasti (pranzo + cena + snack)</td><td>€30–45</td></tr><tr><td>🚆 Trasporti (treno + città)</td><td>€10–22</td></tr><tr><td>🎟️ Musei &amp; ingressi</td><td>€15–28</td></tr><tr><td>🚲 Bici (OV-fiets)</td><td>€4–8</td></tr><tr><td>🍺 Drink &amp; varie</td><td>€10–20</td></tr><tr class="total"><td><strong>Totale stimato</strong></td><td><strong>€70–125</strong></td></tr></tbody></table><div class="tip blue" style="margin-top:0.75rem">💡 Il costo della vita è medio-alto. Evitare i ristoranti nella zona dei canali di Amsterdam a ora di pranzo: i prezzi salgono del 30–40% rispetto ai quartieri residenziali.</div></div>
     </div><!-- /tab-info -->
 
   </div><!-- /content-wrapper -->
 </div><!-- /app-body -->
 
 <script>
-// ============================
-// TAB SWITCHING
-// ============================
-function openTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  btn.classList.add('active');
-}
-
 document.addEventListener("DOMContentLoaded", function () {
 
+  const mapWrapper = document.getElementById('map-wrapper');
+  const contentWrapper = document.getElementById('content-wrapper');
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const mobileNav = document.getElementById('mobile-nav');
+
   // ============================
-  // MAP INIT
+  // TAB & MAP VISIBILITY LOGIC
+  // ============================
+  function openTab(tabId) {
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    // Deactivate all tab buttons (desktop)
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    // Deactivate all mobile nav links
+    document.querySelectorAll('.mobile-nav-link').forEach(el => el.classList.remove('active'));
+
+    // Show selected tab content
+    document.getElementById(tabId).classList.add('active');
+    // Activate the corresponding desktop button
+    document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+    // Activate the corresponding mobile link
+    document.querySelector(`.mobile-nav-link[data-tab="${tabId}"]`).classList.add('active');
+
+    // Show/hide map based on tab
+    if (tabId === 'tab-itinerario') {
+        mapWrapper.classList.remove('hidden');
+        contentWrapper.classList.remove('full-width');
+    } else {
+        mapWrapper.classList.add('hidden');
+        contentWrapper.classList.add('full-width');
+    }
+
+    // Invalidate map size to fix potential rendering issues after showing it
+    setTimeout(() => {
+        if (map) {
+            map.invalidateSize();
+        }
+    }, 410); // Should be slightly longer than the CSS transition
+  }
+
+  // Desktop tab clicks
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+          openTab(btn.getAttribute('data-tab'));
+      });
+  });
+
+  // Mobile nav link clicks
+  document.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+          e.preventDefault();
+          openTab(link.getAttribute('data-tab'));
+          // Close hamburger menu after selection
+          hamburgerBtn.classList.remove('open');
+          mobileNav.style.display = 'none';
+      });
+  });
+
+  // Hamburger menu toggle
+  hamburgerBtn.addEventListener('click', () => {
+      hamburgerBtn.classList.toggle('open');
+      if (hamburgerBtn.classList.contains('open')) {
+          mobileNav.style.display = 'flex';
+      } else {
+          mobileNav.style.display = 'none';
+      }
+  });
+
+
+  // ============================
+  // MAP INIT & DATA (Unchanged)
   // ============================
   var map = L.map('map', { zoomControl: true }).setView([52.1, 4.8], 9);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1250,9 +941,6 @@ document.addEventListener("DOMContentLoaded", function () {
     attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
   }).addTo(map);
 
-  // ============================
-  // DATA
-  // ============================
   var overviewData = [
     { lat: 52.3105, lng: 4.7683, num: "1",   titolo: "Aeroporto Schiphol", sub: "Arrivo · Giorno 1",      img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=300&q=80" },
     { lat: 52.3731, lng: 4.8922, num: "1–4", titolo: "Amsterdam",          sub: "Giorni 1–4",             img: "https://images.unsplash.com/photo-1517736996303-4e64a4f88f66?auto=format&fit=crop&w=300&q=80" },
@@ -1263,89 +951,42 @@ document.addEventListener("DOMContentLoaded", function () {
     { lat: 52.1153, lng: 4.2783, num: "7",   titolo: "Scheveningen",       sub: "Spiaggia · Giorno 7",    img: "https://images.unsplash.com/photo-1596417743510-18dc0e6e76cf?auto=format&fit=crop&w=300&q=80" },
     { lat: 52.0116, lng: 4.3592, num: "8",   titolo: "Delft",              sub: "Gita · Giorno 8",        img: "https://images.unsplash.com/photo-1563200720-c2d7ed153cb1?auto=format&fit=crop&w=300&q=80" }
   ];
-
   var overviewPolylineCoords = [
     [52.3105, 4.7683], [52.3731, 4.8922], [52.0907, 5.1214], [52.3731, 4.8922],
     [51.9225, 4.4791], [51.8833, 4.6333], [51.9225, 4.4791], [52.0705, 4.3007],
     [52.1153, 4.2783], [51.9225, 4.4791], [52.0116, 4.3592], [51.9225, 4.4791],
     [52.3105, 4.7683]
   ];
-
   var dayData = {
-    1: [
-      { lat: 52.3105, lng: 4.7683, icon: "✈️", title: "Schiphol" },
-      { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Amsterdam Centraal" },
-      { lat: 52.3702, lng: 4.8860, icon: "🛍️", title: "Nove Strade" },
-      { lat: 52.3768, lng: 4.8800, icon: "📸", title: "Quartiere Jordaan" }
-    ],
-    2: [
-      { lat: 52.3600, lng: 4.8852, icon: "🏛️", title: "Rijksmuseum" },
-      { lat: 52.3560, lng: 4.8930, icon: "🍴", title: "Albert Cuypmarkt" },
-      { lat: 52.3580, lng: 4.8686, icon: "🌳", title: "Vondelpark" }
-    ],
-    3: [
-      { lat: 52.3584, lng: 4.8811, icon: "🎨", title: "Van Gogh Museum" },
-      { lat: 52.4000, lng: 4.8933, icon: "🏭", title: "NDSM-werf" },
-      { lat: 52.3730, lng: 4.8920, icon: "⛵", title: "Crociera Canali" }
-    ],
-    4: [
-      { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Amsterdam Centraal" },
-      { lat: 52.0928, lng: 5.1143, icon: "🚉", title: "Utrecht Centraal" },
-      { lat: 52.0907, lng: 5.1214, icon: "🏰", title: "Torre del Dom & Oudegracht" }
-    ],
-    5: [
-      { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Partenza Amsterdam" },
-      { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
-      { lat: 51.9202, lng: 4.4860, icon: "🛒", title: "Markthal" },
-      { lat: 51.9203, lng: 4.4900, icon: "📸", title: "Case Cubiche" }
-    ],
-    6: [
-      { lat: 51.9090, lng: 4.4800, icon: "⛵", title: "Imbarco Waterbus" },
-      { lat: 51.8833, lng: 4.6333, icon: "🌾", title: "Mulini di Kinderdijk" },
-      { lat: 51.9056, lng: 4.4497, icon: "🏘️", title: "Delfshaven storici" }
-    ],
-    7: [
-      { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
-      { lat: 52.0804, lng: 4.3143, icon: "🏛️", title: "Mauritshuis & Binnenhof" },
-      { lat: 52.1153, lng: 4.2783, icon: "🌊", title: "Spiaggia Scheveningen" }
-    ],
-    8: [
-      { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
-      { lat: 52.0116, lng: 4.3592, icon: "🏺", title: "Delft Centro" },
-      { lat: 51.9054, lng: 4.4666, icon: "🗼", title: "Torre Euromast (RTM)" }
-    ],
-    9: [
-      { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" },
-      { lat: 52.3105, lng: 4.7683, icon: "✈️", title: "Aeroporto Schiphol" }
-    ]
+    1: [{ lat: 52.3105, lng: 4.7683, icon: "✈️", title: "Schiphol" }, { lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Amsterdam Centraal" }, { lat: 52.3702, lng: 4.8860, icon: "🛍️", title: "Nove Strade" }, { lat: 52.3768, lng: 4.8800, icon: "📸", title: "Quartiere Jordaan" }],
+    2: [{ lat: 52.3600, lng: 4.8852, icon: "🏛️", title: "Rijksmuseum" }, { lat: 52.3560, lng: 4.8930, icon: "🍴", title: "Albert Cuypmarkt" }, { lat: 52.3580, lng: 4.8686, icon: "🌳", title: "Vondelpark" }],
+    3: [{ lat: 52.3584, lng: 4.8811, icon: "🎨", title: "Van Gogh Museum" }, { lat: 52.4000, lng: 4.8933, icon: "🏭", title: "NDSM-werf" }, { lat: 52.3730, lng: 4.8920, icon: "⛵", title: "Crociera Canali" }],
+    4: [{ lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Amsterdam Centraal" }, { lat: 52.0928, lng: 5.1143, icon: "🚉", title: "Utrecht Centraal" }, { lat: 52.0907, lng: 5.1214, icon: "🏰", title: "Torre del Dom & Oudegracht" }],
+    5: [{ lat: 52.3780, lng: 4.9000, icon: "🚉", title: "Partenza Amsterdam" }, { lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" }, { lat: 51.9202, lng: 4.4860, icon: "🛒", title: "Markthal" }, { lat: 51.9203, lng: 4.4900, icon: "📸", title: "Case Cubiche" }],
+    6: [{ lat: 51.9090, lng: 4.4800, icon: "⛵", title: "Imbarco Waterbus" }, { lat: 51.8833, lng: 4.6333, icon: "🌾", title: "Mulini di Kinderdijk" }, { lat: 51.9056, lng: 4.4497, icon: "🏘️", title: "Delfshaven storici" }],
+    7: [{ lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" }, { lat: 52.0804, lng: 4.3143, icon: "🏛️", title: "Mauritshuis & Binnenhof" }, { lat: 52.1153, lng: 4.2783, icon: "🌊", title: "Spiaggia Scheveningen" }],
+    8: [{ lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" }, { lat: 52.0116, lng: 4.3592, icon: "🏺", title: "Delft Centro" }, { lat: 51.9054, lng: 4.4666, icon: "🗼", title: "Torre Euromast (RTM)" }],
+    9: [{ lat: 51.9225, lng: 4.4791, icon: "🚉", title: "Rotterdam Centraal" }, { lat: 52.3105, lng: 4.7683, icon: "✈️", title: "Aeroporto Schiphol" }]
   };
 
-  // ============================
-  // MAP LAYERS
-  // ============================
-  var overviewLayerGroup  = L.layerGroup();
+  var overviewLayerGroup = L.layerGroup();
   var currentDayLayerGroup = L.layerGroup();
   var activeDay = null;
-  var overviewMarkers  = [];
+  var overviewMarkers = [];
   var activeDayMarkers = [];
 
-  function createOverview() {
+  function createOverview() { /* ... unchanged ... */
     overviewData.forEach(function (p) {
-      var icon = L.divIcon({
-        className: 'custom-div-icon',
-        html: '<div class="pin-inner">' + p.num + '</div>',
-        iconSize: [30, 30], iconAnchor: [15, 15]
-      });
+      var icon = L.divIcon({ className: 'custom-div-icon', html: '<div class="pin-inner">' + p.num + '</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
       var popup = '<div class="custom-popup"><img src="' + p.img + '" alt="' + p.titolo + '"><h4>' + p.titolo + '</h4><p>' + p.sub + '</p></div>';
       var marker = L.marker([p.lat, p.lng], { icon: icon }).bindPopup(popup, { maxWidth: 240 });
       overviewMarkers.push(marker);
       overviewLayerGroup.addLayer(marker);
     });
-    L.polyline(overviewPolylineCoords, { color: '#F56A00', weight: 3, opacity: 0.5, dashArray: '8, 8' })
-      .addTo(overviewLayerGroup);
+    L.polyline(overviewPolylineCoords, { color: '#F56A00', weight: 3, opacity: 0.5, dashArray: '8, 8' }).addTo(overviewLayerGroup);
   }
 
-  function showOverview() {
+  function showOverview() { /* ... unchanged ... */
     map.removeLayer(currentDayLayerGroup);
     overviewLayerGroup.addTo(map);
     var bounds = L.featureGroup(overviewMarkers).getBounds();
@@ -1353,38 +994,28 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('map-hint').textContent = '💡 Clicca un giorno per vedere le tappe dettagliate sulla mappa';
   }
 
-  function showDay(dayNum) {
+  function showDay(dayNum) { /* ... unchanged ... */
     map.removeLayer(overviewLayerGroup);
     currentDayLayerGroup.clearLayers();
     activeDayMarkers = [];
-
     var points = dayData[dayNum] || [];
-    var coords  = [];
-
+    var coords = [];
     points.forEach(function (p, i) {
       var letter = String.fromCharCode(65 + i);
-      var html   = '<div class="pin-detail"><span class="pin-letter">' + letter + '</span><span class="pin-icon">' + p.icon + '</span></div>';
-      var icon   = L.divIcon({ className: 'custom-div-icon', html: html, iconSize: [58, 34], iconAnchor: [29, 17] });
+      var html = '<div class="pin-detail"><span class="pin-letter">' + letter + '</span><span class="pin-icon">' + p.icon + '</span></div>';
+      var icon = L.divIcon({ className: 'custom-div-icon', html: html, iconSize: [58, 34], iconAnchor: [29, 17] });
       var marker = L.marker([p.lat, p.lng], { icon: icon }).bindPopup('<b>' + letter + '. ' + p.title + '</b>');
       activeDayMarkers.push(marker);
       currentDayLayerGroup.addLayer(marker);
       coords.push([p.lat, p.lng]);
     });
-
-    if (coords.length > 1) {
-      L.polyline(coords, { color: '#004B87', weight: 4, opacity: 0.75 }).addTo(currentDayLayerGroup);
-    }
+    if (coords.length > 1) { L.polyline(coords, { color: '#004B87', weight: 4, opacity: 0.75 }).addTo(currentDayLayerGroup); }
     currentDayLayerGroup.addTo(map);
-
-    if (coords.length === 1) {
-      map.setView(coords[0], 14);
-    } else {
+    if (coords.length === 1) { map.setView(coords[0], 14); }
+    else {
       var bounds = L.featureGroup(activeDayMarkers).getBounds();
-      if (bounds.getNorthEast().distanceTo(bounds.getSouthWest()) < 3000) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-      } else {
-        map.fitBounds(bounds, { padding: [50, 50] });
-      }
+      if (bounds.getNorthEast().distanceTo(bounds.getSouthWest()) < 3000) { map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 }); }
+      else { map.fitBounds(bounds, { padding: [50, 50] }); }
     }
     document.getElementById('map-hint').textContent = '← Clicca di nuovo la card per tornare alla visuale generale';
   }
@@ -1395,7 +1026,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ============================
   // CORE SELECT LOGIC
   // ============================
-  function selectDay(dayNum) {
+  function selectDay(dayNum) { /* ... unchanged ... */
     if (activeDay === dayNum) {
       activeDay = null;
       document.querySelectorAll('.day-card').forEach(c => c.classList.remove('selected'));
@@ -1405,35 +1036,26 @@ document.addEventListener("DOMContentLoaded", function () {
       activeDay = dayNum;
       document.querySelectorAll('.day-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.js-day').forEach(b => b.classList.remove('active'));
-      var card  = document.querySelector('.day-card[data-day="' + dayNum + '"]');
+      var card = document.querySelector('.day-card[data-day="' + dayNum + '"]');
       var jsBtn = document.querySelector('.js-day[data-day="' + dayNum + '"]');
-      if (card)  card.classList.add('selected');
+      if (card) card.classList.add('selected');
       if (jsBtn) jsBtn.classList.add('active');
       showDay(dayNum);
     }
   }
 
-  // ============================
-  // CARD CLICK & HOVER
-  // ============================
+  // Card clicks and hovers
   document.querySelectorAll('.day-card').forEach(function (card) {
-    card.addEventListener('click', function () {
-      selectDay(parseInt(card.getAttribute('data-day')));
-    });
-
+    card.addEventListener('click', function () { selectDay(parseInt(card.getAttribute('data-day'))); });
     card.addEventListener('mouseenter', function () {
       if (activeDay === null) {
         var hDay = card.getAttribute('data-day');
         overviewMarkers.forEach(function (m) {
           var pin = m.getElement() && m.getElement().querySelector('.pin-inner');
-          if (pin && pin.innerHTML.includes(hDay)) {
-            pin.classList.add('active');
-            m.setZIndexOffset(1000);
-          }
+          if (pin && pin.innerHTML.includes(hDay)) { pin.classList.add('active'); m.setZIndexOffset(1000); }
         });
       }
     });
-
     card.addEventListener('mouseleave', function () {
       if (activeDay === null) {
         overviewMarkers.forEach(function (m) {
@@ -1444,28 +1066,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ============================
-  // JOURNEY STRIP BUTTONS
-  // ============================
+  // Journey strip clicks
   document.querySelectorAll('.js-day').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var dayNum = parseInt(btn.getAttribute('data-day'));
-
-      // Switch to itinerario tab
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById('tab-itinerario').classList.add('active');
-      document.querySelector('.tab-btn').classList.add('active');
-
+      openTab('tab-itinerario'); // Switch to itinerario tab
       selectDay(dayNum);
-
-      // Scroll card into view
       setTimeout(function () {
         var card = document.querySelector('.day-card[data-day="' + dayNum + '"]');
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 80);
     });
   });
+
+  // Set default view on load
+  openTab('tab-itinerario');
 
 });
 </script>
